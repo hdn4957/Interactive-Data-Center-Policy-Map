@@ -173,7 +173,8 @@ h1, h2, h3, .disp{ font-family:var(--display); font-stretch:75%; font-weight:700
 .ctx p{ margin:6px 0 0; font-size:14.5px; color:var(--ink2); }
 .dsec{ margin:20px 0 0; padding-bottom:8px; border-bottom:2px solid var(--rule); }
 .pol{ padding:14px 0 16px; border-bottom:1px solid var(--hair); scroll-margin-top:8px; }
-.pol.cur{ background:var(--tint); margin:0 -12px; padding-left:12px; padding-right:12px; }
+.pstep{ display:grid; grid-template-columns:44px minmax(0,1fr) 44px; gap:8px; margin:12px 0 2px; }
+.pstep .stepb{ min-height:42px; }
 .polh{ display:grid; grid-template-columns:36px minmax(0,1fr); gap:12px; align-items:center; }
 .polh .cell{ width:36px; height:36px; font-size:17px; }
 .polh h4{ margin:0; font-size:16px; font-weight:700; line-height:1.2; }
@@ -195,12 +196,11 @@ h1, h2, h3, .disp{ font-family:var(--display); font-stretch:75%; font-weight:700
 .sechead p{ margin:0; color:var(--ink2); max-width:70ch; font-size:15px; }
 
 /* compare */
-.cpick{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:6px; }
+.cpick{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:6px; max-width:44rem; }
 .cpick label{ display:grid; gap:5px; min-width:0; }
-.cpick select, .critsel{ width:100%; appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--ink); border:1.5px solid var(--ink); padding:9px 34px 9px 11px; font-size:15px; font-weight:600; cursor:pointer;
+.cpick select, .critsel, .psel{ width:100%; appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--ink); border:1.5px solid var(--ink); padding:9px 34px 9px 11px; font-size:15px; font-weight:600; cursor:pointer;
   background-image:linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
   background-position:calc(100% - 17px) 52%, calc(100% - 11px) 52%; background-size:6px 6px; background-repeat:no-repeat; }
-.cpick select.opt{ border-style:dashed; }
 .ctabs{ display:flex; flex-wrap:wrap; border:1px solid var(--hair); margin:16px 0 4px; width:max-content; max-width:100%; }
 .ctabs button{ font-size:14px; font-weight:600; padding:9px 15px; border:0; border-left:1px solid var(--hair); background:var(--surface); color:var(--ink2); cursor:pointer; white-space:nowrap; }
 .ctabs button:first-child{ border-left:0; }
@@ -333,12 +333,9 @@ table.rb tr.cur th, table.rb tr.cur td{ background:var(--tint); }
   .srcs a{ display:inline-block; padding:5px 0; font-size:13px; }
   .gloss{ font-size:13px; }
   .cpick{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
-  .cpick label:nth-child(3){ grid-column:1 / -1; }
   .ctabs{ display:none; }
   .cstep{ display:grid; grid-template-columns:46px minmax(0,1fr) 46px; gap:8px; margin:14px 0 2px; }
-  .cpick select, .critsel{ font-size:16px; padding:10px 30px 10px 10px; background-position:calc(100% - 16px) 52%, calc(100% - 10px) 52%; }
-  .cmp.n3 .chd h3{ font-size:20px; }
-  .cmp.n3 .chd .dscore b{ font-size:28px; }
+  .cpick select, .critsel, .psel{ font-size:16px; padding:10px 30px 10px 10px; background-position:calc(100% - 16px) 52%, calc(100% - 10px) 52%; }
   .chd h3{ overflow-wrap:anywhere; }
   .chd .dscore span{ font-size:11.5px; }
   .clab b{ font-size:18px; }
@@ -391,12 +388,11 @@ table.rb tr.cur th, table.rb tr.cur td{ background:var(--tint); }
   <section class="sec" id="compare">
     <div class="sechead">
       <h2>Compare side by side</h2>
-      <p>Choose two or three places, then pick a criterion to read their policies side by side.</p>
+      <p>Choose two places, then pick a criterion to read their policies side by side.</p>
     </div>
     <div class="cpick">
       <label for="cmp-a"><span class="kick">First</span><select id="cmp-a"></select></label>
       <label for="cmp-b"><span class="kick">Second</span><select id="cmp-b"></select></label>
-      <label for="cmp-c"><span class="kick">Third (optional)</span><select id="cmp-c" class="opt"></select></label>
     </div>
     <div class="ctabs" id="ctabs" role="group" aria-label="Criterion to compare"></div>
     <div class="cstep">
@@ -526,7 +522,7 @@ const OVR = J.slice().sort((a,b)=>b.avg-a.avg || a.order-b.order);
 OVR.forEach(d=>{ d.rank = 1 + OVR.findIndex(x=>Math.abs(x.avg-d.avg)<1e-9); });
 const GROUP_SHORT = {EU:'EU', US:'US', IN:'India'};
 
-const state = { crit:'overall', sel:null, sortKey:'overall', sortDir:-1, preset:'world', cmp:['germany','virginia',null], cmpCrit:'reporting' };
+const state = { crit:'overall', sel:null, sortKey:'overall', sortDir:-1, preset:'world', cmp:['germany','virginia'], cmpCrit:'reporting', detCrit:'reporting' };
 const val = (d, k=state.crit) => k==='overall' ? d.avg : d.s[CI[k]];
 const fmt = (v, k=state.crit) => k==='overall' ? v.toFixed(2) : String(v);
 const critLabel = k => k==='overall' ? 'Overall' : CRITS[CI[k]].label;
@@ -771,7 +767,7 @@ function renderRanking(){
   </div>`;
 }
 function renderDetail(){
-  const d = BY[state.sel], c = state.crit, N = d.notes;
+  const d = BY[state.sel], N = d.notes;
   let rel = '';
   if (d.parent) {
     const p = BY[d.parent], diff = d.avg - p.avg;
@@ -781,24 +777,28 @@ function renderDetail(){
     rel = `<div class="rel">Also scored within: ${d.kids.map(k=>`<button type="button" class="chip" data-id="${k}">${esc(BY[k].n)} <span class="v">${BY[k].avg.toFixed(2)}</span></button>`).join('')}</div>`;
   }
   const ctx = N.ctx ? `<div class="ctx"><p class="kick">Background</p><p>${esc(N.ctx.t)}</p>${srcList(N.ctx.src)}</div>` : '';
-  const pols = CRITS.map((k,i) => {
-    const b = blurbOf(d,k.k), v = d.s[i];
-    return `<section class="pol${c===k.k?' cur':''}" data-crit="${k.k}" aria-label="${esc(k.label)}">
+  const k = CRITS[CI[state.detCrit]], v = d.s[CI[k.k]], b = blurbOf(d,k.k);
+  const step = `<div class="pstep">
+      <button type="button" class="stepb" data-step="-1" aria-label="Previous criterion">‹</button>
+      <select class="psel" id="psel" aria-label="Criterion">${CRITS.map(c=>`<option value="${c.k}"${c.k===k.k?' selected':''}>${esc(c.label)}</option>`).join('')}</select>
+      <button type="button" class="stepb" data-step="1" aria-label="Next criterion">›</button>
+    </div>`;
+  const pols = `<section class="pol" data-crit="${k.k}" aria-label="${esc(k.label)}" aria-live="polite">
       <div class="polh"><span class="cell" style="${cellStyle(v,k.k)}">${v}</span><div><h4>${esc(k.label)}</h4><p class="lvl">Level ${v}: ${esc(RUBRIC[k.k][v])}</p></div></div>
       <p class="blurb">${esc(b.t || 'No policy notes for this criterion.')}</p>
       ${srcList(b.src)}
     </section>`;
-  }).join('');
   panel.innerHTML = `<div class="pin">
     <button type="button" class="back" data-back>← All jurisdictions</button>
     <div class="dlevel">${mark(d.g)}${esc(d.lv)}</div>
     <h2 class="dname">${esc(d.n)}</h2>
     <div class="dscore"><b class="num">${d.avg.toFixed(2)}</b><span>overall · ranked ${d.rank} of 20</span></div>
-    ${stripHTML(d)}
+    ${stripHTML(d, state.detCrit)}
     ${rel}
     <div class="acts"><button type="button" class="btn" data-cmp="${d.id}">Compare side by side</button></div>
     ${ctx}
     <h3 class="kick dsec">Policies behind each score</h3>
+    ${step}
     ${pols}
     <p class="gloss">PUE: power usage effectiveness · WUE: water usage effectiveness · CUE: carbon usage effectiveness · MW, GW: megawatts, gigawatts · MVA: megavolt-amperes</p>
   </div>`;
@@ -812,39 +812,39 @@ panel.addEventListener('click', e => {
   const t = e.target;
   if (t.closest('[data-back]')) { select(null, {src:'back'}); return; }
   const s = t.closest('.strip button[data-crit]');
-  if (s) { setCrit(s.dataset.crit, {fromStrip:true}); return; }
+  if (s) { setDetCrit(s.dataset.crit, true); return; }
+  const st = t.closest('[data-step]');
+  if (st) { setDetCrit(CRITS[(CI[state.detCrit] + Number(st.dataset.step) + CRITS.length) % CRITS.length].k); return; }
   const cm = t.closest('[data-cmp]');
   if (cm) { compareFrom(cm.dataset.cmp); return; }
   const r = t.closest('button[data-id]');
   if (r) { select(r.dataset.id, {zoom:true, src:'list'}); return; }
 });
-function showCurrentCrit(fromStrip){
-  if (!state.sel || state.crit==='overall') return;
-  const blk = panel.querySelector(`.pol[data-crit="${state.crit}"]`);
-  if (!blk) return;
-  const oy = getComputedStyle(panel).overflowY;
-  if (oy === 'auto' || oy === 'scroll') panel.scrollTo({ top: blk.offsetTop - 10, behavior: smooth });
-  else if (fromStrip) blk.scrollIntoView({behavior: smooth, block:'start'});
+panel.addEventListener('change', e => { if (e.target.id === 'psel') setDetCrit(e.target.value); });
+function setDetCrit(k, reveal){
+  const a = document.activeElement, refocus = a && a.id === 'psel' ? '#psel' : a && a.dataset && a.dataset.step ? `[data-step="${a.dataset.step}"]` : null;
+  state.detCrit = k;
+  renderPanel(true);
+  if (refocus) { const el = panel.querySelector(refocus); if (el) el.focus({preventScroll:true}); }
+  if (reveal) { const blk = panel.querySelector('.pol'); if (blk) blk.scrollIntoView({behavior: smooth, block:'nearest'}); }
 }
 
 /* ---------------- compare ---------------- */
-const cmpSel = [$('#cmp-a'), $('#cmp-b'), $('#cmp-c')];
+const cmpSel = [$('#cmp-a'), $('#cmp-b')];
 const opts = OVR.map(d => `<option value="${d.id}">${esc(d.n)} · ${d.avg.toFixed(2)}</option>`).join('');
-cmpSel.forEach((s,i) => { s.innerHTML = (i===2 ? '<option value="">None</option>' : '') + opts; });
+cmpSel.forEach(s => { s.innerHTML = opts; });
 function syncCmpSelects(){ cmpSel.forEach((s,i) => { s.value = state.cmp[i] || ''; }); }
 cmpSel.forEach((s,i) => s.addEventListener('change', () => {
-  const nv = s.value || null, old = state.cmp[i];
-  const j = nv ? state.cmp.findIndex((x,k) => k!==i && x===nv) : -1;
-  if (j >= 0) state.cmp[j] = (j===2 || old) ? old : null;
+  const nv = s.value, old = state.cmp[i];
+  if (state.cmp[1-i] === nv) state.cmp[1-i] = old;   // picking the other slot's place swaps them
   state.cmp[i] = nv;
-  if (!state.cmp[0] || !state.cmp[1]) { const free = OVR.find(d => !state.cmp.includes(d.id)); if (!state.cmp[0]) state.cmp[0] = free.id; else state.cmp[1] = free.id; }
   syncCmpSelects(); renderCompare(); setCmpHash();
 }));
 function compareFrom(id){
   const d = BY[id], cur = state.cmp;
   const other = d.parent || (d.kids && d.kids[0]) || (cur[0] !== id ? cur[0] : cur[1] !== id ? cur[1] : null) || OVR.find(x => x.id !== id).id;
-  state.cmp = [id, other === id ? OVR.find(x => x.id !== id).id : other, cur[2] && cur[2] !== id && cur[2] !== other ? cur[2] : null];
-  syncCmpSelects(); if (state.crit !== 'overall') setCmpCrit(state.crit); else renderCompare(); setCmpHash();
+  state.cmp = [id, other === id ? OVR.find(x => x.id !== id).id : other];
+  syncCmpSelects(); setCmpCrit(state.sel === id ? state.detCrit : state.cmpCrit); setCmpHash();
   $('#compare').scrollIntoView({behavior: smooth, block:'start'});
 }
 function setCmpHash(){
@@ -871,7 +871,7 @@ function renderCompare(){
       </div>`; }).join('')}
     </div>`;
   }).join('');
-  const el = $('#cmp'); el.style.setProperty('--n', ds.length); el.classList.toggle('n3', ds.length === 3); el.innerHTML = head + rows;
+  const el = $('#cmp'); el.style.setProperty('--n', ds.length); el.innerHTML = head + rows;
 }
 const ctabs = $('#ctabs'), ccrit = $('#ccrit');
 ctabs.innerHTML = CRITS.map(c => `<button type="button" data-k="${c.k}">${esc(c.label)}</button>`).join('');
@@ -921,15 +921,16 @@ function renderRubric(){
 }
 
 /* ---------------- state changes ---------------- */
-function setCrit(k, opts={}){
+function setCrit(k){
   state.crit = k;
+  if (k !== 'overall') state.detCrit = k;
   critsEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k===k)));
   critSel.value = k;
-  paint(); renderLegend(); renderPanel(true); renderCompare(); renderTable(); renderRubric(); showCurrentCrit(opts.fromStrip);
+  paint(); renderLegend(); renderPanel(true); renderCompare(); renderTable(); renderRubric();
 }
 function select(id, opts={}){
   state.sel = id && BY[id] ? id : null;
-  paintSel(); renderPanel(false); renderTable(); showCurrentCrit();
+  paintSel(); renderPanel(false); renderTable();
   if (opts.zoom && state.sel) zoomToJur(state.sel);
   if (matchMedia('(max-width:1100px)').matches && (opts.src === 'map' || opts.src === 'list' || opts.src === 'back')) {
     requestAnimationFrame(() => panel.scrollIntoView({behavior: smooth, block:'start'}));
@@ -944,8 +945,8 @@ function select(id, opts={}){
 function parseCmp(h){
   if (!h.startsWith('compare-')) return null;
   const ids = h.slice(8).split('-vs-').filter(id => BY[id]);
-  const uniq = [...new Set(ids)].slice(0,3);
-  return uniq.length >= 2 ? [uniq[0], uniq[1], uniq[2] || null] : null;
+  const uniq = [...new Set(ids)];
+  return uniq.length >= 2 ? [uniq[0], uniq[1]] : null;
 }
 function route(h, initial){
   const c = parseCmp(h);
