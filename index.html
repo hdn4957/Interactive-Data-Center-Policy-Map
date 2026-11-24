@@ -173,8 +173,7 @@ h1, h2, h3, .disp{ font-family:var(--display); font-stretch:75%; font-weight:700
 .ctx p{ margin:6px 0 0; font-size:14.5px; color:var(--ink2); }
 .dsec{ margin:20px 0 0; padding-bottom:8px; border-bottom:2px solid var(--rule); }
 .pol{ padding:14px 0 16px; border-bottom:1px solid var(--hair); scroll-margin-top:8px; }
-.pstep{ display:grid; grid-template-columns:44px minmax(0,1fr) 44px; gap:8px; margin:12px 0 2px; }
-.pstep .stepb{ min-height:42px; }
+.phint{ margin:8px 0 0; font-size:13px; color:var(--muted); }
 .polh{ display:grid; grid-template-columns:36px minmax(0,1fr); gap:12px; align-items:center; }
 .polh .cell{ width:36px; height:36px; font-size:17px; }
 .polh h4{ margin:0; font-size:16px; font-weight:700; line-height:1.2; }
@@ -198,7 +197,7 @@ h1, h2, h3, .disp{ font-family:var(--display); font-stretch:75%; font-weight:700
 /* compare */
 .cpick{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:6px; max-width:44rem; }
 .cpick label{ display:grid; gap:5px; min-width:0; }
-.cpick select, .critsel, .psel{ width:100%; appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--ink); border:1.5px solid var(--ink); padding:9px 34px 9px 11px; font-size:15px; font-weight:600; cursor:pointer;
+.cpick select, .critsel{ width:100%; appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--ink); border:1.5px solid var(--ink); padding:9px 34px 9px 11px; font-size:15px; font-weight:600; cursor:pointer;
   background-image:linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
   background-position:calc(100% - 17px) 52%, calc(100% - 11px) 52%; background-size:6px 6px; background-repeat:no-repeat; }
 .ctabs{ display:flex; flex-wrap:wrap; border:1px solid var(--hair); margin:16px 0 4px; width:max-content; max-width:100%; }
@@ -206,7 +205,13 @@ h1, h2, h3, .disp{ font-family:var(--display); font-stretch:75%; font-weight:700
 .ctabs button:first-child{ border-left:0; }
 .ctabs button:hover{ color:var(--ink); background:var(--tint); }
 .ctabs button[aria-pressed="true"]{ background:var(--ink); color:var(--paper); }
-.cstep{ display:none; }
+.cnums{ display:none; }
+.cnums button{ border:0; background:none; padding:4px 0; display:flex; flex-direction:column; align-items:stretch; gap:5px; cursor:pointer; min-width:0;
+  font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.02em; color:var(--muted); text-align:center; }
+.cnums .cv{ display:grid; grid-template-columns:1fr 1fr; gap:2px; }
+.cnums .cv i{ font-style:normal; display:grid; place-items:center; height:32px; font-family:var(--mono); font-weight:600; font-size:14px; }
+.cnums button[aria-pressed="true"]{ color:var(--ink); }
+.cnums button[aria-pressed="true"] .cv{ outline:2px solid var(--ink); outline-offset:2px; }
 .stepb{ border:1.5px solid var(--ink); background:var(--surface); color:var(--ink); font-size:24px; line-height:1; cursor:pointer; }
 .stepb:hover{ background:var(--ink); color:var(--paper); }
 .cmp{ --cols:11rem repeat(var(--n), minmax(0,1fr)); }
@@ -334,8 +339,8 @@ table.rb tr.cur th, table.rb tr.cur td{ background:var(--tint); }
   .gloss{ font-size:13px; }
   .cpick{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
   .ctabs{ display:none; }
-  .cstep{ display:grid; grid-template-columns:46px minmax(0,1fr) 46px; gap:8px; margin:14px 0 2px; }
-  .cpick select, .critsel, .psel{ font-size:16px; padding:10px 30px 10px 10px; background-position:calc(100% - 16px) 52%, calc(100% - 10px) 52%; }
+  .cnums{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin:14px 0 2px; }
+  .cpick select, .critsel{ font-size:16px; padding:10px 30px 10px 10px; background-position:calc(100% - 16px) 52%, calc(100% - 10px) 52%; }
   .chd h3{ overflow-wrap:anywhere; }
   .chd .dscore span{ font-size:11.5px; }
   .clab b{ font-size:18px; }
@@ -395,11 +400,6 @@ table.rb tr.cur th, table.rb tr.cur td{ background:var(--tint); }
       <label for="cmp-b"><span class="kick">Second</span><select id="cmp-b"></select></label>
     </div>
     <div class="ctabs" id="ctabs" role="group" aria-label="Criterion to compare"></div>
-    <div class="cstep">
-      <button type="button" class="stepb" id="cprev" aria-label="Previous criterion">‹</button>
-      <select id="ccrit" class="critsel" aria-label="Criterion to compare"></select>
-      <button type="button" class="stepb" id="cnext" aria-label="Next criterion">›</button>
-    </div>
     <div class="cmp" id="cmp"></div>
   </section>
 
@@ -778,11 +778,6 @@ function renderDetail(){
   }
   const ctx = N.ctx ? `<div class="ctx"><p class="kick">Background</p><p>${esc(N.ctx.t)}</p>${srcList(N.ctx.src)}</div>` : '';
   const k = CRITS[CI[state.detCrit]], v = d.s[CI[k.k]], b = blurbOf(d,k.k);
-  const step = `<div class="pstep">
-      <button type="button" class="stepb" data-step="-1" aria-label="Previous criterion">‹</button>
-      <select class="psel" id="psel" aria-label="Criterion">${CRITS.map(c=>`<option value="${c.k}"${c.k===k.k?' selected':''}>${esc(c.label)}</option>`).join('')}</select>
-      <button type="button" class="stepb" data-step="1" aria-label="Next criterion">›</button>
-    </div>`;
   const pols = `<section class="pol" data-crit="${k.k}" aria-label="${esc(k.label)}" aria-live="polite">
       <div class="polh"><span class="cell" style="${cellStyle(v,k.k)}">${v}</span><div><h4>${esc(k.label)}</h4><p class="lvl">Level ${v}: ${esc(RUBRIC[k.k][v])}</p></div></div>
       <p class="blurb">${esc(b.t || 'No policy notes for this criterion.')}</p>
@@ -798,7 +793,7 @@ function renderDetail(){
     <div class="acts"><button type="button" class="btn" data-cmp="${d.id}">Compare side by side</button></div>
     ${ctx}
     <h3 class="kick dsec">Policies behind each score</h3>
-    ${step}
+    <p class="phint">Select a score above to switch criteria.</p>
     ${pols}
     <p class="gloss">PUE: power usage effectiveness · WUE: water usage effectiveness · CUE: carbon usage effectiveness · MW, GW: megawatts, gigawatts · MVA: megavolt-amperes</p>
   </div>`;
@@ -813,16 +808,13 @@ panel.addEventListener('click', e => {
   if (t.closest('[data-back]')) { select(null, {src:'back'}); return; }
   const s = t.closest('.strip button[data-crit]');
   if (s) { setDetCrit(s.dataset.crit, true); return; }
-  const st = t.closest('[data-step]');
-  if (st) { setDetCrit(CRITS[(CI[state.detCrit] + Number(st.dataset.step) + CRITS.length) % CRITS.length].k); return; }
   const cm = t.closest('[data-cmp]');
   if (cm) { compareFrom(cm.dataset.cmp); return; }
   const r = t.closest('button[data-id]');
   if (r) { select(r.dataset.id, {zoom:true, src:'list'}); return; }
 });
-panel.addEventListener('change', e => { if (e.target.id === 'psel') setDetCrit(e.target.value); });
 function setDetCrit(k, reveal){
-  const a = document.activeElement, refocus = a && a.id === 'psel' ? '#psel' : a && a.dataset && a.dataset.step ? `[data-step="${a.dataset.step}"]` : null;
+  const a = document.activeElement, refocus = a && a.closest && a.closest('#panel .strip') && a.dataset.crit ? `.strip button[data-crit="${k}"]` : null;
   state.detCrit = k;
   renderPanel(true);
   if (refocus) { const el = panel.querySelector(refocus); if (el) el.focus({preventScroll:true}); }
@@ -871,23 +863,19 @@ function renderCompare(){
       </div>`; }).join('')}
     </div>`;
   }).join('');
-  const el = $('#cmp'); el.style.setProperty('--n', ds.length); el.innerHTML = head + rows;
+  const nums = `<div class="cnums" role="group" aria-label="Criterion to compare">${CRITS.map((k,i) => `<button type="button" data-crit="${k.k}" aria-pressed="${state.cmpCrit===k.k}" aria-label="${esc(k.label)}: ${ds.map(d=>esc(d.n)+' '+d.s[i]).join(', ')}"><span>${esc(k.short)}</span><span class="cv">${ds.map(d => `<i style="${cellStyle(d.s[i],k.k)}">${d.s[i]}</i>`).join('')}</span></button>`).join('')}</div>`;
+  const el = $('#cmp'); el.style.setProperty('--n', ds.length); el.innerHTML = head + nums + rows;
 }
-const ctabs = $('#ctabs'), ccrit = $('#ccrit');
+const ctabs = $('#ctabs');
 ctabs.innerHTML = CRITS.map(c => `<button type="button" data-k="${c.k}">${esc(c.label)}</button>`).join('');
-ccrit.innerHTML = CRITS.map(c => `<option value="${c.k}">${esc(c.label)}</option>`).join('');
 function setCmpCrit(k){
   state.cmpCrit = k;
   ctabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k===k)));
-  ccrit.value = k; renderCompare();
+  renderCompare();
 }
 ctabs.addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (b) setCmpCrit(b.dataset.k); });
-ccrit.addEventListener('change', () => setCmpCrit(ccrit.value));
-const stepCrit = n => setCmpCrit(CRITS[(CI[state.cmpCrit] + n + CRITS.length) % CRITS.length].k);
-$('#cprev').addEventListener('click', () => stepCrit(-1));
-$('#cnext').addEventListener('click', () => stepCrit(1));
 $('#cmp').addEventListener('click', e => {
-  const s = e.target.closest('.strip button[data-crit]');
+  const s = e.target.closest('.strip button[data-crit], .cnums button[data-crit]');
   if (s) { setCmpCrit(s.dataset.crit); return; }
   const o = e.target.closest('[data-open]');
   if (o) { select(o.dataset.open, {zoom:true}); $('#stage').scrollIntoView({behavior: smooth, block:'start'}); }
@@ -897,9 +885,9 @@ $('#cmp').addEventListener('click', e => {
 function renderTable(){
   const key = state.sortKey, dir = state.sortDir;
   const rows = J.slice().sort((a,b) => dir*(val(a,key)-val(b,key)) || b.avg-a.avg || a.order-b.order);
-  const th = (k, label) => `<th class="${state.crit===k?'cur':''}" aria-sort="${key===k?(dir<0?'descending':'ascending'):'none'}"><button type="button" data-sort="${k}">${esc(label)}${key===k?(dir<0?' ↓':' ↑'):''}</button></th>`;
+  const th = (k, label) => `<th aria-sort="${key===k?(dir<0?'descending':'ascending'):'none'}"><button type="button" data-sort="${k}">${esc(label)}${key===k?(dir<0?' ↓':' ↑'):''}</button></th>`;
   const head = `<thead><tr><th><button type="button" data-sort="name">Jurisdiction</button></th>${CRITS.map(c=>th(c.k,c.short)).join('')}${th('overall','Overall')}</tr></thead>`;
-  const body = rows.map(d => `<tr data-id="${d.id}" class="${state.sel===d.id?'on':''}"><td class="n"><button type="button" data-id="${d.id}"><span class="gsw">${d.g?mark(d.g):''}</span>${esc(d.n)}${d.parent?` <small>${esc(GROUP_SHORT[d.g])}</small>`:''}</button></td>${CRITS.map((c,i)=>`<td class="c${state.crit===c.k?' cur':''}" style="${cellStyle(d.s[i],c.k)}">${d.s[i]}</td>`).join('')}<td class="o">${d.avg.toFixed(2)}</td></tr>`).join('');
+  const body = rows.map(d => `<tr data-id="${d.id}" class="${state.sel===d.id?'on':''}"><td class="n"><button type="button" data-id="${d.id}"><span class="gsw">${d.g?mark(d.g):''}</span>${esc(d.n)}${d.parent?` <small>${esc(GROUP_SHORT[d.g])}</small>`:''}</button></td>${CRITS.map((c,i)=>`<td class="c" style="${cellStyle(d.s[i],c.k)}">${d.s[i]}</td>`).join('')}<td class="o">${d.avg.toFixed(2)}</td></tr>`).join('');
   $('#table').innerHTML = head + '<tbody>' + body + '</tbody>';
 }
 $('#table').addEventListener('click', e => {
@@ -915,7 +903,7 @@ $('#table').addEventListener('click', e => {
 });
 function renderRubric(){
   const head = `<thead><tr><th>Criterion</th>${[0,1,2,3,4].map(v=>`<th><span class="cell" style="${cellStyle(v,'reporting')}">${v}</span></th>`).join('')}</tr></thead>`;
-  const body = CRITS.map(c => `<tr class="${state.crit===c.k?'cur':''}"><th scope="row">${esc(c.label)}</th>${RUBRIC[c.k].map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('');
+  const body = CRITS.map(c => `<tr><th scope="row">${esc(c.label)}</th>${RUBRIC[c.k].map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('');
   $('#rubric').innerHTML = head + '<tbody>' + body + '</tbody>';
   $('#rubric-m').innerHTML = CRITS.map(c => `<div class="rbc"><h4>${esc(c.label)}</h4><span>${esc(GLOSS[c.k])}</span><ul class="rub">${RUBRIC[c.k].map((t,v)=>`<li><span class="cell" style="${cellStyle(v,c.k)}">${v}</span><span>${esc(t)}</span></li>`).join('')}</ul></div>`).join('');
 }
@@ -926,7 +914,7 @@ function setCrit(k){
   if (k !== 'overall') state.detCrit = k;
   critsEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k===k)));
   critSel.value = k;
-  paint(); renderLegend(); renderPanel(true); renderCompare(); renderTable(); renderRubric();
+  paint(); renderLegend(); renderPanel(true); renderCompare();
 }
 function select(id, opts={}){
   state.sel = id && BY[id] ? id : null;
